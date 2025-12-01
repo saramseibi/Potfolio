@@ -1,0 +1,119 @@
+<div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition duration-300 transform hover:-translate-y-2">
+
+    <div class="relative overflow-hidden h-48">
+        <img src="{{ project.imageUrl ??  ' ' }}"
+             alt="{{ project.title }}"
+             class="w-full h-full object-cover transition duration-300 transform hover:scale-110">
+
+        {% if project.isFeatured %}
+            <span class="absolute top-4 right-4 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-sm font-bold">
+                <i class="fas fa-star"></i> Featured
+            </span>
+        {% endif %}
+    </div>
+
+    <div class="p-6">
+
+        <h3 class="text-2xl font-bold mb-2 text-gray-800 hover:text-blue-600 transition">
+            <a href="{{ path('project_show', {slug: project.slug}) }}">
+                {{ project.title }}
+            </a>
+        </h3>
+
+
+        <p class="text-gray-600 mb-4 line-clamp-3">
+            {{ project.shortDescription }}
+        </p>
+
+
+        <div class="flex flex-wrap gap-2 mb-4">
+            {% for tech in project.technologies|slice(0, 4) %}
+                <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                    {{ tech }}
+                </span>
+            {% endfor %}
+            {% if project.technologies|length > 4 %}
+                <span class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
+                    +{{ project.technologies|length - 4 }}
+                </span>
+            {% endif %}
+        </div>
+
+        {# Links #}
+        <div class="flex gap-4 mb-6">
+            {% if project.githubUrl %}
+                <a href="{{ project.githubUrl }}" target="_blank"
+                   class="text-gray-600 hover:text-blue-600 transition flex items-center gap-2">
+                    <i class="fab fa-github text-2xl"></i>
+                    <span class="text-sm">Code</span>
+                </a>
+            {% endif %}
+            {% if project.liveUrl %}
+                <a href="{{ project.liveUrl }}" target="_blank"
+                   class="text-gray-600 hover:text-blue-600 transition flex items-center gap-2">
+                    <i class="fas fa-external-link-alt text-xl"></i>
+                    <span class="text-sm">Live Demo</span>
+                </a>
+            {% endif %}
+        </div>
+
+
+        <div class="border-t pt-4"
+             data-controller="project-interaction"
+             data-project-interaction-id-value="{{ project.id }}"
+             data-project-interaction-authenticated-value="{{ app.user ? 'true' : 'false' }}"
+             data-project-interaction-liked-value="{{ project.isLikedByUser(app.user) ?  'true' : 'false' }}">
+
+
+            <div class="flex items-center justify-between mb-4">
+                <button
+                    data-action="click->project-interaction#toggleLike"
+                    class="like-btn flex items-center gap-2 transition {{ project.isLikedByUser(app.user) ? 'text-red-600' : 'text-gray-600 hover:text-red-600' }}">
+                    <i class="fas fa-heart text-xl"></i>
+                    <span data-project-interaction-target="likeCount" class="font-medium">
+                        {{ project.likesCount }}
+                    </span>
+                </button>
+
+                <span class="text-gray-600 flex items-center gap-2">
+                    <i class="fas fa-comment"></i>
+                    <span class="font-medium">{{ project. commentsCount }}</span>
+                </span>
+            </div>
+
+
+            {% if app.user %}
+                <form data-action="submit->project-interaction#addComment" class="mb-4">
+                    <textarea
+                        data-project-interaction-target="commentInput"
+                        class="w-full border-2 rounded-lg p-3 focus:border-blue-500 focus:outline-none resize-none"
+                        placeholder="Add a comment..."
+                        rows="2"></textarea>
+                    <button type="submit"
+                            class="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+                        Post Comment
+                    </button>
+                </form>
+            {% else %}
+                <p class="text-gray-500 italic text-sm">
+                    Please <a href="{{ path('app_login') }}" class="text-blue-600 font-medium hover:underline">sign in</a> to like or comment
+                </p>
+            {% endif %}
+
+
+            <div data-project-interaction-target="commentsList" class="space-y-2">
+                {% for comment in project.comments|slice(0, 2) %}
+                    <div class="bg-gray-50 rounded-lg p-3">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="font-semibold text-sm text-gray-800">{{ comment. author. username }}</span>
+                            <span class="text-xs text-gray-500">
+                                {{ comment.createdAt|date('M d, Y') }}
+                            </span>
+                        </div>
+                        <p class="text-gray-700 text-sm">{{ comment.content|slice(0, 100) }}{% if comment.content|length > 100 %}...{% endif %}</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>

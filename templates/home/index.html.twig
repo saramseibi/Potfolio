@@ -1,0 +1,245 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Portfolio - Sarra Mseibi{% endblock %}
+
+{% block body %}
+
+
+    <section class="hero bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 text-white py-32 relative overflow-hidden">
+
+        <div class="absolute inset-0 opacity-20">
+            <div class="absolute top-0 left-0 w-96 h-96 bg-white rounded-full filter blur-3xl animate-pulse"></div>
+            <div class="absolute bottom-0 right-0 w-96 h-96 bg-purple-300 rounded-full filter blur-3xl animate-pulse delay-1000"></div>
+        </div>
+
+        <div class="container mx-auto px-6 text-center relative z-10">
+            <h1 class="text-5xl md:text-7xl font-bold mb-6 animate-fade-in">
+                Full Stack Developer
+            </h1>
+            <p class="text-xl md:text-2xl mb-8 opacity-90 max-w-3xl mx-auto">
+                Crafting elegant solutions with modern technologies.  Passionate about clean code and exceptional user experiences.
+            </p>
+            <div class="flex justify-center gap-4 flex-wrap">
+                <a href="#projects"
+                   class="inline-block bg-white text-blue-600 px-8 py-4 rounded-lg font-bold text-lg hover:shadow-2xl transition transform hover:-translate-y-1">
+                    <i class="fas fa-briefcase mr-2"></i>View My Work
+                </a>
+                <a href="#contact"
+                   class="inline-block border-2 border-white text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-white hover:text-blue-600 transition">
+                    <i class="fas fa-envelope mr-2"></i>Get In Touch
+                </a>
+            </div>
+        </div>
+    </section>
+
+
+    <section id="about" class="py-20 bg-white">
+        <div class="container mx-auto px-6">
+            <h2 class="text-4xl font-bold text-center mb-12 text-gray-800">
+                About Me
+                <div class="w-24 h-1 bg-blue-600 mx-auto mt-4"></div>
+            </h2>
+
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <div class="flex justify-center">
+                    <img src="/images/profile. jpg"
+                         alt="Professional Photo"
+                         class="rounded-2xl w-80 h-80 object-cover shadow-2xl border-8 border-blue-100 transform hover:scale-105 transition duration-300">
+                </div>
+
+                <div class="space-y-6">
+                    <div class="bg-blue-50 border-l-4 border-blue-600 p-6 rounded-r-lg">
+                        <p class="text-lg text-gray-700 leading-relaxed">
+                        </p>
+                    </div>
+
+                    <div class="bg-purple-50 border-l-4 border-purple-600 p-6 rounded-r-lg">
+                        <p class="text-lg text-gray-700 leading-relaxed">
+
+                        </p>
+                    </div>
+
+                    <div class="bg-green-50 border-l-4 border-green-600 p-6 rounded-r-lg">
+                        <p class="text-lg text-gray-700 leading-relaxed">
+
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {# Projects Section #}
+    <section id="projects" class="py-20 bg-gray-50">
+        <div class="container mx-auto px-6">
+            <h2 class="text-4xl font-bold text-center mb-4 text-gray-800">
+                Featured Projects
+                <div class="w-24 h-1 bg-blue-600 mx-auto mt-4"></div>
+            </h2>
+            <p class="text-center text-gray-600 mb-12 text-lg">
+                A selection of my best work
+            </p>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {% for project in projects %}
+                    {% include 'components/project_card.html.twig' with {'project': project} %}
+                {% else %}
+                    <div class="col-span-3 text-center py-12">
+                        <i class="fas fa-folder-open text-6xl text-gray-300 mb-4"></i>
+                        <p class="text-gray-500 text-xl">No projects to display yet. </p>
+                    </div>
+                {% endfor %}
+            </div>
+
+            {% if projects|length > 0 %}
+                <div class="text-center mt-12">
+                    <a href="{{ path('project_index') }}"
+                       class="inline-block px-8 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition">
+                        View All Projects <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+
+    {# Skills Section #}
+    <section id="skills" class="py-20 bg-white">
+        <div class="container mx-auto px-6">
+            <h2 class="text-4xl font-bold text-center mb-4 text-gray-800">
+                Technical Skills
+                <div class="w-24 h-1 bg-blue-600 mx-auto mt-4"></div>
+            </h2>
+            <p class="text-center text-gray-600 mb-12 text-lg">
+                Technologies and tools I work with
+            </p>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {% for category, categorySkills in skills %}
+                    <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 shadow-lg hover:shadow-2xl transition">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-{{ category == 'Frontend' ? 'laptop-code' : (category == 'Backend' ? 'server' : (category == 'Database' ? 'database' : (category == 'DevOps' ? 'cloud' : 'tools'))) }} text-white text-xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800">
+                                {{ category }}
+                            </h3>
+                        </div>
+
+                        <div class="space-y-4">
+                            {% for skill in categorySkills %}
+                                {% include 'components/skill_badge. html.twig' with {'skill': skill} %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="col-span-3 text-center py-12">
+                        <i class="fas fa-code text-6xl text-gray-300 mb-4"></i>
+                        <p class="text-gray-500 text-xl">No skills to display yet.</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    {# Contact Section #}
+    <section id="contact" class="py-20 bg-gray-50">
+        <div class="container mx-auto px-6">
+            <h2 class="text-4xl font-bold text-center mb-4 text-gray-800">
+                Get In Touch
+                <div class="w-24 h-1 bg-blue-600 mx-auto mt-4"></div>
+            </h2>
+            <p class="text-center text-gray-600 mb-12 text-lg">
+                Let's work together on your next project
+            </p>
+
+            <div class="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto">
+                {# Contact Information #}
+                <div class="space-y-6">
+                    <h3 class="text-2xl font-bold mb-6 text-gray-800">Let's Connect</h3>
+
+                    <div class="flex items-center gap-4 p-4 bg-white rounded-lg shadow hover:shadow-lg transition">
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-envelope text-2xl text-blue-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Email</p>
+                            <a href="mailto:your.email@example.com" class="text-lg font-medium hover:text-blue-600 transition">
+                                sarramseibi2@gmail.com
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4 p-4 bg-white rounded-lg shadow hover:shadow-lg transition">
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fab fa-linkedin text-2xl text-blue-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">LinkedIn</p>
+                            <a href="https://www.linkedin.com/in/sarra-mseibi/" target="_blank" class="text-lg font-medium hover:text-blue-600 transition">
+                               sarra-mseibi
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4 p-4 bg-white rounded-lg shadow hover:shadow-lg transition">
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fab fa-github text-2xl text-blue-600"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">GitHub</p>
+                            <a href="https://github.com/saramseibi" target="_blank" class="text-lg font-medium hover:text-blue-600 transition">
+                                saramseibi
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="bg-white rounded-xl shadow-lg p-8">
+                    {% if app.user %}
+                        <h3 class="text-xl font-bold mb-6 text-gray-800">Send Me a Message</h3>
+
+                        {{ form_start(form, {'attr': {'class': 'space-y-6'}}) }}
+
+                        <div>
+                            {{ form_label(form.subject, null, {'label_attr': {'class': 'block font-medium mb-2 text-gray-700'}}) }}
+                            {{ form_widget(form.subject) }}
+                            {{ form_errors(form.subject) }}
+                        </div>
+
+                        <div>
+                            {{ form_label(form.body, null, {'label_attr': {'class': 'block font-medium mb-2 text-gray-700'}}) }}
+                            {{ form_widget(form.body) }}
+                            {{ form_errors(form.body) }}
+                        </div>
+
+                        <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition">
+                            <i class="fas fa-paper-plane mr-2"></i>Send Message
+                        </button>
+
+                        {{ form_end(form) }}
+                    {% else %}
+                        <div class="text-center py-12">
+                            <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-lock text-4xl text-blue-600"></i>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2 text-gray-800">Authentication Required</h3>
+                            <p class="text-gray-600 mb-6">
+                                Please sign in to send me a message
+                            </p>
+                            <div class="flex gap-4 justify-center">
+                                <a href="{{ path('app_login') }}" class="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition">
+                                    Sign In
+                                </a>
+                                <a href="{{ path('app_register') }}" class="px-6 py-3 border-2 border-blue-600 text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition">
+                                    Sign Up
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+{% endblock %}

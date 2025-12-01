@@ -1,0 +1,20 @@
+<div class="skill-item">
+    <div class="flex justify-between items-center mb-2">
+        <div class="flex items-center gap-2">
+            {% if skill.iconClass %}
+            <i class="{{ skill.iconClass }} text-xl text-blue-600"></i>
+            {% endif %}
+            <span class="font-medium text-gray-800">{{ skill.name }}</span>
+        </div>
+        <span class="text-sm text-gray-600 font-medium">{{ skill.proficiencyLevel }}%</span>
+    </div>
+
+    {# Progress Bar #}
+    <div class="w-full bg-gray-200 rounded-full h-2. 5 overflow-hidden">
+        <div class="bg-gradient-to-r from-blue-500 to-blue-600 h-2.5 rounded-full transition-all duration-1000 ease-out"
+             style="width: 0%"
+             data-controller="animate-skill"
+             data-animate-skill-level-value="{{ skill.proficiencyLevel }}">
+        </div>
+    </div>
+</div>
