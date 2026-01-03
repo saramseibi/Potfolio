@@ -12,6 +12,8 @@
 
 
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
 
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -32,26 +34,32 @@
             }
         }
     </script>
+
+
 </head>
+<script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+<script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+
 
 <body class="bg-gray-50 text-gray-900">
 
 
-{% include 'components/navbar.html.twig' %}
 
+    {% include 'components/navbar.html.twig' %}
 
-<div class="container mx-auto px-6 mt-4">
-    {% for label, messages in app.flashes %}
-        {% for message in messages %}
-            <div class="alert alert-{{ label }} p-4 rounded-lg text-white mb-4
-                            {{ label == 'success' ? 'bg-green-500' : 'bg-red-500' }}">
-                {{ message }}
-            </div>
+    <div class="fixed top-20 right-6 z-50 space-y-3 w-80">
+        {% for label, messages in app.flashes %}
+            {% for message in messages %}
+                <div class="px-4 py-3 rounded-lg text-white shadow-lg
+                {{ label == 'success' ? 'bg-green-500' : 'bg-red-500' }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
         {% endfor %}
-    {% endfor %}
-</div>
+    </div>
 
-{# Main Content #}
+
+    <main class="pt-20">
 {% block body %}{% endblock %}
 
 </body>

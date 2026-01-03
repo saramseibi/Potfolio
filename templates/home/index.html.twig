@@ -5,9 +5,10 @@
 {% block body %}
 
 
-    <section class="hero bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 text-white py-32 relative overflow-hidden">
+    <section class="hero bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 text-white py-36 pt-44 relative overflow-hidden shadow-inner">
 
-        <div class="absolute inset-0 opacity-20">
+
+    <div class="absolute inset-0 opacity-20">
             <div class="absolute top-0 left-0 w-96 h-96 bg-white rounded-full filter blur-3xl animate-pulse"></div>
             <div class="absolute bottom-0 right-0 w-96 h-96 bg-purple-300 rounded-full filter blur-3xl animate-pulse delay-1000"></div>
         </div>
@@ -21,7 +22,7 @@
             </p>
             <div class="flex justify-center gap-4 flex-wrap">
                 <a href="#projects"
-                   class="inline-block bg-white text-blue-600 px-8 py-4 rounded-lg font-bold text-lg hover:shadow-2xl transition transform hover:-translate-y-1">
+                   class="inline-block border-2 border-white text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-white hover:text-blue-600 transition">
                     <i class="fas fa-briefcase mr-2"></i>View My Work
                 </a>
                 <a href="#contact"
@@ -33,43 +34,109 @@
     </section>
 
 
-    <section id="about" class="py-20 bg-white">
+    <section id="about" class="py-20 md:py-28 bg-white">
         <div class="container mx-auto px-6">
             <h2 class="text-4xl font-bold text-center mb-12 text-gray-800">
                 About Me
                 <div class="w-24 h-1 bg-blue-600 mx-auto mt-4"></div>
             </h2>
 
-            <div class="grid md:grid-cols-2 gap-12 items-center">
-                <div class="flex justify-center">
-                    <img src="/images/profile. jpg"
-                         alt="Professional Photo"
-                         class="rounded-2xl w-80 h-80 object-cover shadow-2xl border-8 border-blue-100 transform hover:scale-105 transition duration-300">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+
+                <lottie-player
+                    src="https://assets10.lottiefiles.com/packages/lf20_tno6cg2w.json"
+                    background="transparent"
+                    speed="2"
+                    loop
+                    autoplay
+                    style="width:700px;height:400px;">
+                </lottie-player>
+
+
+
+                <div class="space-y-10">
+
+
+
+                    <div>
+                        <h3 class="text-2xl md:text-3xl font-semibold text-gray-900 mb-3">
+
+                        Hi, I’m <span class="text-blue-600">Sarra</span> 👋
+                        </h3>
+                        <p class="text-gray-600 leading-relaxed text-base md:text-lg">
+
+                        A passionate <span class="font-medium text-gray-800">Full-Stack Developer</span>
+                            who loves building modern, scalable, and user-friendly web applications.
+                        </p>
+                    </div>
+
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 md:mr-20">
+
+
+
+                        <div class="flex gap-4 p-5 bg-gray-50 rounded-2xl shadow-sm hover:shadow-md transition">
+                            <div class="text-blue-600 text-2xl">
+                                <i class="fas fa-code"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-800">Clean Code</h4>
+                                <p class="text-sm text-gray-600">
+                                    I focus on maintainable, scalable, and readable code.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Card 2 -->
+                        <div class="flex gap-4 p-5 bg-gray-50 rounded-2xl shadow-sm hover:shadow-md transition">
+                            <div class="text-blue-600 text-2xl">
+                                <i class="fas fa-layer-group"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-800">Modern Stack</h4>
+                                <p class="text-sm text-gray-600">
+                                    Symfony, Node.js, REST APIs, and modern frontend tools.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Card 3 -->
+                        <div class="flex gap-4 p-5 bg-gray-50 rounded-2xl shadow-sm hover:shadow-md transition">
+                            <div class="text-blue-600 text-2xl">
+                                <i class="fas fa-lightbulb"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-800">Problem Solver</h4>
+                                <p class="text-sm text-gray-600">
+                                    I enjoy solving real-world problems with smart solutions.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Card 4 -->
+                        <div class="flex gap-3 p-5 bg-gray-50 rounded-2xl shadow-sm hover:shadow-md transition">
+                            <div class="text-blue-500 text-2xl">
+                                <i class="fas fa-rocket"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-800">Always Learning</h4>
+                                <p class="text-sm text-gray-600">
+                                    Constantly improving and exploring new technologies.
+                                </p>
+                            </div>
+                        </div>
+
+                    </div>
+
+
+
                 </div>
 
-                <div class="space-y-6">
-                    <div class="bg-blue-50 border-l-4 border-blue-600 p-6 rounded-r-lg">
-                        <p class="text-lg text-gray-700 leading-relaxed">
-                        </p>
-                    </div>
-
-                    <div class="bg-purple-50 border-l-4 border-purple-600 p-6 rounded-r-lg">
-                        <p class="text-lg text-gray-700 leading-relaxed">
-
-                        </p>
-                    </div>
-
-                    <div class="bg-green-50 border-l-4 border-green-600 p-6 rounded-r-lg">
-                        <p class="text-lg text-gray-700 leading-relaxed">
-
-                        </p>
-                    </div>
-                </div>
             </div>
         </div>
     </section>
 
-    {# Projects Section #}
+
     <section id="projects" class="py-20 bg-gray-50">
         <div class="container mx-auto px-6">
             <h2 class="text-4xl font-bold text-center mb-4 text-gray-800">
@@ -93,8 +160,8 @@
 
             {% if projects|length > 0 %}
                 <div class="text-center mt-12">
-                    <a href="{{ path('project_index') }}"
-                       class="inline-block px-8 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition">
+                    <a href="#projects"
+                       class="inline-block px-8 py-3 bg-blue-600 text-white rounded-lg font-bold hover: bg-blue-700 transition">
                         View All Projects <i class="fas fa-arrow-right ml-2"></i>
                     </a>
                 </div>
@@ -102,62 +169,69 @@
         </div>
     </section>
 
-    {# Skills Section #}
-    <section id="skills" class="py-20 bg-white">
-        <div class="container mx-auto px-6">
-            <h2 class="text-4xl font-bold text-center mb-4 text-gray-800">
-                Technical Skills
-                <div class="w-24 h-1 bg-blue-600 mx-auto mt-4"></div>
+    <section id="skills" class="py-20 md:py-28 bg-white relative">
+
+    <div class="max-w-6xl mx-auto px-6">
+
+        <h2 class="text-2xl md:text-3xl font-bold text-center mb-14 text-gray-900">
+
+        Technologies and tools I work with
             </h2>
-            <p class="text-center text-gray-600 mb-12 text-lg">
-                Technologies and tools I work with
-            </p>
 
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="grid md:grid-cols-2 gap-8">
+
                 {% for category, categorySkills in skills %}
-                    <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 shadow-lg hover:shadow-2xl transition">
-                        <div class="flex items-center gap-3 mb-6">
-                            <div class="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-{{ category == 'Frontend' ? 'laptop-code' : (category == 'Backend' ? 'server' : (category == 'Database' ? 'database' : (category == 'DevOps' ? 'cloud' : 'tools'))) }} text-white text-xl"></i>
-                            </div>
-                            <h3 class="text-xl font-bold text-gray-800">
-                                {{ category }}
-                            </h3>
-                        </div>
 
-                        <div class="space-y-4">
+                    <div class="bg-gray-50 rounded-3xl p-8
+shadow-md hover:shadow-xl
+hover:-translate-y-1
+transition-all duration-300
+border border-gray-100
+">
+
+
+                        <h3 class="text-xl font-semibold text-gray-800 mb-6">
+                            {{ category }}
+                        </h3>
+
+
+                        <div class="flex flex-wrap gap-4">
                             {% for skill in categorySkills %}
-                                {% include 'components/skill_badge. html.twig' with {'skill': skill} %}
+                                {% include 'components/skill_badge.html.twig' with { skill: skill } %}
                             {% endfor %}
                         </div>
+
                     </div>
                 {% else %}
-                    <div class="col-span-3 text-center py-12">
-                        <i class="fas fa-code text-6xl text-gray-300 mb-4"></i>
-                        <p class="text-gray-500 text-xl">No skills to display yet.</p>
+                    <div class="col-span-2 text-center py-12 text-gray-500">
+                        <i class="fas fa-code text-5xl mb-4"></i>
+                        <p>No skills to display yet.</p>
                     </div>
                 {% endfor %}
+
             </div>
         </div>
     </section>
 
-    {# Contact Section #}
+
+
+
     <section id="contact" class="py-20 bg-gray-50">
         <div class="container mx-auto px-6">
             <h2 class="text-4xl font-bold text-center mb-4 text-gray-800">
                 Get In Touch
                 <div class="w-24 h-1 bg-blue-600 mx-auto mt-4"></div>
             </h2>
-            <p class="text-center text-gray-600 mb-12 text-lg">
+            <p class="text-center text-gray- mb-12 text-lg">
                 Let's work together on your next project
             </p>
 
             <div class="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto">
-                {# Contact Information #}
+
                 <div class="space-y-6">
                     <h3 class="text-2xl font-bold mb-6 text-gray-800">Let's Connect</h3>
 
-                    <div class="flex items-center gap-4 p-4 bg-white rounded-lg shadow hover:shadow-lg transition">
+                    <div class="flex items-center gap-4 p-4  bg-white/80 backdrop-blur-xl  rounded-2xl border border-white/40 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 ">
                         <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                             <i class="fas fa-envelope text-2xl text-blue-600"></i>
                         </div>
@@ -169,7 +243,7 @@
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-4 p-4 bg-white rounded-lg shadow hover:shadow-lg transition">
+                    <div class="flex items-center gap-4 p-4  bg-white/80 backdrop-blur-xl  rounded-2xl border border-white/40 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 ">
                         <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                             <i class="fab fa-linkedin text-2xl text-blue-600"></i>
                         </div>
@@ -181,7 +255,7 @@
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-4 p-4 bg-white rounded-lg shadow hover:shadow-lg transition">
+                    <div class="flex items-center gap-4 p-4  bg-white/80 backdrop-blur-xl  rounded-2xl border border-white/40 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
                         <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                             <i class="fab fa-github text-2xl text-blue-600"></i>
                         </div>
@@ -195,49 +269,82 @@
                 </div>
 
 
-                <div class="bg-white rounded-xl shadow-lg p-8">
-                    {% if app.user %}
-                        <h3 class="text-xl font-bold mb-6 text-gray-800">Send Me a Message</h3>
+                {% if app.user %}
 
-                        {{ form_start(form, {'attr': {'class': 'space-y-6'}}) }}
 
+                <div class="bg-white/90 backdrop-blur rounded-2xl shadow-xl p-8 border border-gray-100">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 text-blue-600">
+                            <i class="fas fa-paper-plane text-lg"></i>
+                        </div>
                         <div>
-                            {{ form_label(form.subject, null, {'label_attr': {'class': 'block font-medium mb-2 text-gray-700'}}) }}
-                            {{ form_widget(form.subject) }}
-                            {{ form_errors(form.subject) }}
+                            <h2 class="text-2xl font-bold text-gray-800">Send me a message</h2>
+                            <p class="text-sm text-gray-500">I usually reply within 24 hours</p>
+                        </div>
+                    </div>
+
+                    <form method="post" action="{{ path('send_message') }}" class="space-y-5">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">
+                                Your message
+                            </label>
+
+                            <textarea
+                                name="message"
+                                rows="5"
+                                required
+                                class="w-full p-4 rounded-xl border border-gray-300
+                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                       resize-none transition"
+                                placeholder="Write your message here..."
+                            ></textarea>
                         </div>
 
-                        <div>
-                            {{ form_label(form.body, null, {'label_attr': {'class': 'block font-medium mb-2 text-gray-700'}}) }}
-                            {{ form_widget(form.body) }}
-                            {{ form_errors(form.body) }}
+                        <div class="flex items-center justify-between">
+
+
+                            <button
+                                type="submit"
+                                class="inline-flex items-center gap-2 px-6 py-3
+                       bg-blue-600 text-white font-medium rounded-xl
+                       hover:bg-blue-700 active:scale-95
+                       transition shadow-md hover:shadow-lg">
+                                <i class="fas fa-paper-plane"></i>
+                                Send Message
+                            </button>
                         </div>
+                    </form>
+                </div>
 
-                        <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition">
-                            <i class="fas fa-paper-plane mr-2"></i>Send Message
-                        </button>
 
-                        {{ form_end(form) }}
-                    {% else %}
+                {% else %}
+
+
+                    <div class="bg-white/80 backdrop-blur-xl rounded-2xl shadow-md shadow-purple-500/10 border border-white/40 p-8 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ">
                         <div class="text-center py-12">
-                            <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center  justify-center mx-auto mb-4">
                                 <i class="fas fa-lock text-4xl text-blue-600"></i>
                             </div>
-                            <h3 class="text-xl font-bold mb-2 text-gray-800">Authentication Required</h3>
-                            <p class="text-gray-600 mb-6">
-                                Please sign in to send me a message
-                            </p>
-                            <div class="flex gap-4 justify-center">
-                                <a href="{{ path('app_login') }}" class="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition">
-                                    Sign In
-                                </a>
-                                <a href="{{ path('app_register') }}" class="px-6 py-3 border-2 border-blue-600 text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition">
-                                    Sign Up
-                                </a>
-                            </div>
+
+                        <h2 class="text-2xl font-bold mb-2">Authentication Required</h2>
+                        <p class="text-gray-600 mb-6">
+                            Please sign in to send me a message
+                        </p>
+
+                        <div class="flex justify-center space-x-4">
+                            <a href="{{ path('app_login') }}"
+                               class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                Sign In
+                            </a>
+
+                            <a href="{{ path('app_register') }}"
+                               class="px-6 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50">
+                                Sign Up
+                            </a>
                         </div>
-                    {% endif %}
-                </div>
+                    </div>
+                {% endif %}
+
             </div>
         </div>
     </section>

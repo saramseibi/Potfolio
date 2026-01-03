@@ -1,0 +1,109 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block body %}
+    <div class="min-h-screen bg-gray-100 px-6 pt-20 pb-10">
+
+
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-10">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight text-gray-900">
+                    Dashboard
+                </h1>
+                <p class="mt-1 text-sm text-gray-500">
+                    Welcome back, Admin 👋
+                </p>
+            </div>
+
+
+        </div>
+
+
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-3 mb-12">
+
+
+            <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200 hover:shadow-md transition">
+                <div class="flex items-center gap-4">
+                    <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-blue-100 text-blue-600 text-xl">
+                        <i class="fas fa-folder-open"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Projects</p>
+                        <p class="text-3xl font-bold text-gray-900">
+                            {{ projectsCount }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200 hover:shadow-md transition">
+                <div class="flex items-center gap-4">
+                    <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-green-100 text-green-600 text-xl">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Skills</p>
+                        <p class="text-3xl font-bold text-gray-900">
+                            {{ skillsCount }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200 hover:shadow-md transition">
+                <div class="flex items-center gap-4">
+                    <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-purple-100 text-purple-600 text-xl">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Messages</p>
+                        <p class="text-3xl font-bold text-gray-900">
+                            {{ messagesCount }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+
+
+            <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900 mb-2">
+                    Manage Projects
+                </h2>
+                <p class="mb-5 text-sm text-gray-500">
+                      Create ,or delet project or skill
+                </p>
+                <a href="{{ path('admin_projects') }}"
+                   class="inline-flex items-center rounded-xl bg-blue-600 px-5 py-2.5
+                      text-sm font-semibold text-white hover:bg-blue-700 transition">
+                    Go to Projects
+                </a>
+            </div>
+
+
+            <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900 mb-2">
+                    Messages Inbox
+                </h2>
+                <p class="mb-5 text-sm text-gray-500">
+                    Read messages sent from the contact form.
+                </p>
+
+                <a href="{{ path('admin_messages') }}"
+                   class="inline-flex items-center rounded-xl bg-blue-600 px-5 py-2.5
+                      text-sm font-semibold text-white hover:bg-blue-700 transition">
+                    View Messages
+                </a>
+            </div>
+
+        </div>
+
+    </div>
+{% endblock %}

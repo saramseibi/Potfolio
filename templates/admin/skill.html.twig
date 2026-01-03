@@ -1,0 +1,96 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="max-w-2xl mx-auto pt-20 px-6">
+
+        <div class="rounded-3xl bg-white p-10 shadow-xl ring-1 ring-gray-200">
+
+
+            <div class="mb-10">
+                <h1 class="text-3xl font-bold tracking-tight text-gray-900">
+                    Add New Skill
+                </h1>
+                <p class="mt-2 text-sm text-gray-500">
+                    Define a new skill and assign it to a category.
+                </p>
+            </div>
+
+            {{ form_start(form, {
+                action: path('admin_skill_new'),
+                method: 'POST',
+                attr: {'class': 'space-y-8'}
+            }) }}
+
+
+            <div>
+                {{ form_label(form.name, null, {
+                    label_attr: {'class': 'block text-sm font-semibold text-gray-700 mb-2'}
+                }) }}
+                {{ form_widget(form.name, {
+                    attr: {
+                        class: 'w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3
+                            focus:bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition',
+                        placeholder: 'e.g. Symfony'
+                    }
+                }) }}
+                {{ form_errors(form.name) }}
+            </div>
+
+            <!-- Category -->
+            <div>
+                {{ form_label(form.category, null, {
+                    label_attr: {'class': 'block text-sm font-semibold text-gray-700 mb-2'}
+                }) }}
+                {{ form_widget(form.category, {
+                    attr: {
+                        class: 'w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3
+                            focus:bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition',
+                        placeholder: 'Backend, Frontend, DevOps...'
+                    }
+                }) }}
+                {{ form_errors(form.category) }}
+            </div>
+
+            <!-- Icon -->
+            <div>
+                {{ form_label(form.icon, 'Font Awesome Icon Class', {
+                    label_attr: {'class': 'block text-sm font-semibold text-gray-700 mb-2'}
+                }) }}
+
+                {{ form_widget(form.icon, {
+                    attr: {
+                        class: 'w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3
+                            focus:bg-white focus:ring-2 focus:ring-green-500 focus:border-green-500 transition',
+                        placeholder: 'fab fa-html5'
+                    }
+                }) }}
+
+                <p class="mt-2 text-xs text-gray-400">
+                    Example:
+                    <code class="rounded bg-gray-100 px-2 py-1 text-gray-700">
+                        fab fa-html5
+                    </code>
+                </p>
+
+                {{ form_errors(form.icon) }}
+            </div>
+
+
+            <div class="flex items-center justify-end gap-4 border-t pt-6">
+                <a href="{{ path('admin_projects') }}"
+                   class="inline-flex items-center rounded-xl border border-gray-300 px-6 py-3
+                      text-gray-700 hover:bg-gray-50 transition">
+                    Cancel
+                </a>
+
+                <button type="submit"
+                        class="inline-flex items-center rounded-xl bg-blue-600 px-8 py-3
+                           font-semibold text-white shadow-lg hover:bg-blue-700 transition">
+                    Save
+                </button>
+            </div>
+
+            {{ form_end(form) }}
+        </div>
+    </div>
+{% endblock %}

@@ -3,79 +3,105 @@
 {% block title %}Sign Up{% endblock %}
 
 {% block body %}
-    <div class="min-h-screen bg-gradient-to-br from-green-500 via-blue-500 to-purple-500 flex items-center justify-center py-12 px-4">
-        <div class="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8">
+    <div class="min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center py-12 px-4">
+        <div class="max-w-md w-full  bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm rounded-2xl shadow-2xl p-8">
 
             <div class="text-center mb-8">
                 <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i class="fas fa-user-plus text-4xl text-blue-600"></i>
                 </div>
                 <h2 class="text-3xl font-bold text-gray-800">Create Account</h2>
-                <p class="text-gray-600 mt-2">Join our community today</p>
+                
             </div>
 
-            <!-- PURE HTML FORM -->
-            <form class="space-y-6">
 
-                <!-- Username -->
-                <div>
-                    <label class="block font-medium mb-2 text-gray-700">Username</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fas fa-user text-gray-400"></i>
-                        </div>
-                        <input type="text" class="w-full pl-10 pr-4 py-3 border-2 rounded-lg focus:border-blue-500 focus:outline-none" />
+            {% for message in app.flashes('success') %}
+                <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded">
+                    <i class="fas fa-check-circle mr-2"></i>{{ message }}
+                </div>
+            {% endfor %}
+
+
+            {% for message in app.flashes('error') %}
+                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded">
+                    <i class="fas fa-exclamation-circle mr-2"></i>{{ message }}
+                </div>
+            {% endfor %}
+
+
+            {{ form_start(registrationForm, {'attr': {'class': 'space-y-6'}}) }}
+
+
+            <div>
+                {{ form_label(registrationForm.name, 'Username', {'label_attr':  {'class':  'block font-medium mb-2 text-gray-700'}}) }}
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-user text-gray-400"></i>
                     </div>
+                    {{ form_widget(registrationForm.name, {'attr': {'class': 'w-full pl-10 pr-4 py-3  bg-transparent  border-2 border-purple-400  rounded-lg  focus:border-blue-500 focus:outline-none', 'placeholder': 'Enter your username'}}) }}
                 </div>
+                <div class="text-red-500 text-sm mt-1">
+                    {{ form_errors(registrationForm.name) }}
+                </div>
+            </div>
 
-                <!-- Email -->
-                <div>
-                    <label class="block font-medium mb-2 text-gray-700">Email</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fas fa-envelope text-gray-400"></i>
-                        </div>
-                        <input type="email" class="w-full pl-10 pr-4 py-3 border-2 rounded-lg focus:border-blue-500 focus:outline-none" />
+
+            <div>
+                {{ form_label(registrationForm.email, 'Email', {'label_attr': {'class': ' block font-medium mb-2 text-gray-700  '}}) }}
+                <div class="relative  ">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none ">
+                        <i class="fas fa-envelope text-gray-400"></i>
                     </div>
+                    {{ form_widget(registrationForm.email, {'attr': {'class': 'w-full pl-10 pr-4 py-3  bg-transparent  border-2 border-purple-400  rounded-lg  focus:border-blue-500 focus:outline-none ', 'placeholder':  'Enter your email'}}) }}
                 </div>
+                <div class="text-red-500 text-sm mt-1">
+                    {{ form_errors(registrationForm.email) }}
+                </div>
+            </div>
 
-                <!-- Password -->
-                <div>
-                    <label class="block font-medium mb-2 text-gray-700">Password</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fas fa-lock text-gray-400"></i>
-                        </div>
-                        <input type="password" class="w-full pl-10 pr-4 py-3 border-2 rounded-lg focus:border-blue-500 focus:outline-none" />
+
+            <div>
+                {{ form_label(registrationForm.password, 'Password', {'label_attr': {'class':  'block font-medium mb-2 text-gray-700'}}) }}
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-lock text-gray-400"></i>
                     </div>
+                    {{ form_widget(registrationForm.password, {'attr': {'class': 'w-full pl-10 pr-4 py-3  bg-transparent  border-2 border-purple-400  rounded-lg  focus:border-blue-500 focus:outline-none', 'placeholder': 'Enter your password'}}) }}
                 </div>
+                <div class="text-red-500 text-sm mt-1">
+                    {{ form_errors(registrationForm.password) }}
+                </div>
+            </div>
 
-                <!-- Confirm Password -->
-                <div>
-                    <label class="block font-medium mb-2 text-gray-700">Confirm Password</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fas fa-lock text-gray-400"></i>
-                        </div>
-                        <input type="password" class="w-full pl-10 pr-4 py-3 border-2 rounded-lg focus:border-blue-500 focus:outline-none" />
+
+            <div>
+                {{ form_label(registrationForm.confirmPassword, 'Confirm Password', {'label_attr': {'class':  'block font-medium mb-2 text-gray-700'}}) }}
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-lock text-gray-400"></i>
                     </div>
+                    {{ form_widget(registrationForm.confirmPassword, {'attr': {'class': 'w-full pl-10 pr-4 py-3  bg-transparent  border-2 border-purple-400  rounded-lg  focus:border-blue-500 focus:outline-none', 'placeholder': 'Confirm your password'}}) }}
                 </div>
-
-                <!-- Terms -->
-                <div class="flex items-start">
-                    <input type="checkbox" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-1">
-                    <label class="ml-2 text-sm text-gray-600">
-                        I agree to the <a href="#" class="text-blue-600 hover:underline">Terms and Conditions</a>
-                    </label>
+                <div class="text-red-500 text-sm mt-1">
+                    {{ form_errors(registrationForm.confirmPassword) }}
                 </div>
+            </div>
 
-                <!-- Button -->
-                <button type="submit"
-                        class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition duration-200 shadow-lg">
-                    <i class="fas fa-user-plus mr-2"></i>Create Account
-                </button>
 
-            </form>
+            <div class="flex items-start">
+                <input type="checkbox" class="w-4 h-4 mt-1 appearance-none bg-transparent border-2 border-purple-400 rounded cursor-pointer checked:bg-purple-600 checked:border-purple-600 focus:ring-2 focus:ring-purple-500/40 transition-all" required>
+                <label class="ml-2 text-sm text-gray-600">
+                    I agree to the <a href="#" class="text-blue-600 hover:underline">Terms and Conditions</a>
+                </label>
+            </div>
+
+
+            <button type="submit"
+                    class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition duration-200 shadow-lg">
+                Create Account
+            </button>
+
+            {{ form_end(registrationForm) }}
 
             <p class="text-center mt-6 text-gray-600">
                 Already have an account?
