@@ -1,6 +1,6 @@
-name: Composer Security Scan
+name: CI Security & Quality Checks
 
-run-name: Composer scan - ${{ inputs.scan_id || github.run_id }}
+run-name: "${{ github.workflow }} - ${{ inputs.scan_id }}"
 
 on:
   workflow_dispatch:
@@ -29,172 +29,615 @@ concurrency:
   group: security-${{ inputs.pr_number || inputs.scan_id }}
   cancel-in-progress: true
 
+
 jobs:
+
+  phpunit:
+    name: PHPUnit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    outputs:
+      check_result: ${{ steps.phpunit.outcome }}
+
+    env:
+      APP_ENV: testing
+      APP_DEBUG: "false"
+
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: testing
+      DB_USERNAME: testing
+      DB_PASSWORD: testing_password
+
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+
+    services:
+      mysql:
+        image: mysql:8.0
+
+        env:
+          MYSQL_ROOT_PASSWORD: root_password
+          MYSQL_DATABASE: testing
+          MYSQL_USER: testing
+          MYSQL_PASSWORD: testing_password
+
+        ports:
+          - 3306:3306
+
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot_password"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.commit_sha || github.sha }}
+          persist-credentials: false
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: mbstring, pdo_mysql, gd, zip
+          tools: composer:v2
+          coverage: none
+
+      - name: Install PHP dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Create testing environment file
+        run: cp .env.example .env
+
+      - name: Generate application key
+        run: php artisan key:generate --force
+
+      - name: Clear Laravel caches
+        run: |
+          php artisan config:clear
+          php artisan route:clear
+          php artisan cache:clear
+
+      - name: Prepare testing database
+        run: php artisan migrate --force
+
+      - name: Run PHPUnit tests
+        id: phpunit
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          php artisan test 2>&1 | tee phpunit-results.txt
+
+      - name: Add PHPUnit result to summary
+        if: always()
+        run: |
+          echo "## PHPUnit Tests" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "${{ steps.phpunit.outcome }}" = "success" ]; then
+            echo " All PHPUnit tests passed" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo " PHPUnit found failing tests" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          if [ -f phpunit-results.txt ]; then
+            echo '```text' >> "$GITHUB_STEP_SUMMARY"
+            tail -60 phpunit-results.txt >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload PHPUnit detailed result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-detail-phpunit
+          path: phpunit-results.txt
+          if-no-files-found: warn
+          retention-days: 30
+
+
+
+
   composer-audit:
     name: Composer CVE Audit
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
+    outputs:
+      check_result: ${{ steps.audit.outcome }}
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
+
+      - name: Checkout code
+        uses: actions/checkout@v7
         with:
+          ref: ${{ inputs.commit_sha || github.sha }}
           persist-credentials: false
 
-      - name: Set up PHP and Composer
+      - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.2"
           tools: composer:v2
           coverage: none
 
-      - name: Run Composer audit
+      - name: Validate Composer files
+        run: composer validate --strict --no-check-publish
+
+      - name: Run Composer security audit
         id: audit
-        shell: bash
         run: |
-          if [[ ! -f composer.json ]]; then
-            echo "applicable=false" >> "$GITHUB_OUTPUT"
-            echo "reason=composer.json was not found" >> "$GITHUB_OUTPUT"
-            echo "exit_code=0" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
+          set -o pipefail
 
-          if [[ ! -f composer.lock ]]; then
-            echo "applicable=false" >> "$GITHUB_OUTPUT"
-            echo "reason=composer.lock was not found" >> "$GITHUB_OUTPUT"
-            echo "exit_code=0" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          echo "applicable=true" >> "$GITHUB_OUTPUT"
-
-          set +e
           composer audit \
             --locked \
             --no-interaction \
-            --format=json \
-            > composer-audit.json \
-            2> composer-audit.stderr.txt
-          audit_exit_code=$?
-          set -e
+            --format=plain \
+            2>&1 | tee composer-audit.txt
 
-          echo "exit_code=$audit_exit_code" >> "$GITHUB_OUTPUT"
-
-      - name: Build dashboard JSON
+      - name: Add Composer audit to summary
         if: always()
-        env:
-          SCAN_ID: ${{ inputs.scan_id || github.run_id }}
-          APPLICABLE: ${{ steps.audit.outputs.applicable }}
-          SKIP_REASON: ${{ steps.audit.outputs.reason }}
-          AUDIT_EXIT_CODE: ${{ steps.audit.outputs.exit_code }}
+        run: |
+          echo "## Composer Security Audit" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "${{ steps.audit.outcome }}" = "success" ]; then
+            echo " No known dependency vulnerabilities found" \
+              >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo " Composer found vulnerable dependencies" \
+              >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          if [ -f composer-audit.txt ]; then
+            echo '```text' >> "$GITHUB_STEP_SUMMARY"
+            cat composer-audit.txt >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload Composer detailed result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-detail-composer
+          path: composer-audit.txt
+          if-no-files-found: warn
+          retention-days: 30
+
+
+
+
+  semgrep:
+    name: Semgrep Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    outputs:
+      check_result: ${{ steps.semgrep.outcome }}
+
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.commit_sha || github.sha }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+
+      - name: Install Semgrep
+        run: python -m pip install --upgrade semgrep
+
+      - name: Run Semgrep
+        id: semgrep
+        run: |
+          set -o pipefail
+
+          semgrep scan \
+            --config p/php \
+            --config p/security-audit \
+            --config p/secrets \
+            --error \
+            --exclude vendor \
+            --exclude node_modules \
+            --exclude storage \
+            --exclude bootstrap/cache \
+            2>&1 | tee semgrep-results.txt
+
+      - name: Add Semgrep result to summary
+        if: always()
+        run: |
+          echo "## Semgrep Security Scan" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "${{ steps.semgrep.outcome }}" = "success" ]; then
+            echo " Semgrep security scan passed" \
+              >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo " Semgrep detected security findings" \
+              >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          if [ -f semgrep-results.txt ]; then
+            echo '```text' >> "$GITHUB_STEP_SUMMARY"
+            tail -100 semgrep-results.txt >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload Semgrep detailed result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-detail-semgrep
+          path: semgrep-results.txt
+          if-no-files-found: warn
+          retention-days: 30
+
+
+
+
+  static-analysis:
+    name: Larastan Static Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    outputs:
+      check_result: ${{ steps.larastan.outcome }}
+
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.commit_sha || github.sha }}
+          persist-credentials: false
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: mbstring, gd, zip
+          tools: composer:v2
+          coverage: none
+
+      - name: Install PHP dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Check Larastan installation
+        run: |
+          if [ ! -x "./vendor/bin/phpstan" ]; then
+            echo "::error::Larastan/PHPStan is not installed."
+            echo "Install it locally with:"
+            echo "composer require --dev larastan/larastan"
+            exit 1
+          fi
+
+      - name: Create Laravel environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+
+      - name: Run Larastan
+        id: larastan
+        continue-on-error: true
+        run: |
+          set -o pipefail
+
+          ./vendor/bin/phpstan analyse \
+            app \
+            routes \
+            --no-progress \
+            --error-format=table \
+            2>&1 | tee larastan-results.txt
+
+      - name: Add Larastan result to summary
+        if: always()
+        run: |
+          echo "## Larastan / PHPStan" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "${{ steps.larastan.outcome }}" = "success" ]; then
+            echo " No static-analysis errors found" \
+              >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo " Static-analysis errors found" \
+              >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          if [ -f larastan-results.txt ]; then
+            echo '```text' >> "$GITHUB_STEP_SUMMARY"
+            tail -100 larastan-results.txt >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload Larastan detailed result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-detail-larastan
+          path: larastan-results.txt
+          if-no-files-found: warn
+          retention-days: 30
+
+
+
+
+  code-quality:
+    name: PHP Code Quality Score
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    outputs:
+      check_result: ${{ steps.insights.outcome }}
+
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.commit_sha || github.sha }}
+          persist-credentials: false
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: mbstring, gd, zip
+          tools: composer:v2
+          coverage: none
+
+      - name: Install PHP dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Check PHP Insights installation
+        run: |
+          if [ ! -x "./vendor/bin/phpinsights" ]; then
+            echo "::error::PHP Insights is not installed."
+            echo "Install it locally with:"
+            echo "composer require --dev nunomaduro/phpinsights"
+            exit 1
+          fi
+
+      - name: Run PHP Insights
+        id: insights
+        continue-on-error: true
+        run: |
+          set -o pipefail
+
+          ./vendor/bin/phpinsights analyse app \
+            --no-interaction \
+            2>&1 | tee phpinsights-results.txt
+
+      - name: Add quality score to summary
+        if: always()
+        run: |
+          echo "## Code Quality Score" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -f phpinsights-results.txt ]; then
+            echo '```text' >> "$GITHUB_STEP_SUMMARY"
+            cat phpinsights-results.txt >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No quality report generated." \
+              >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload PHP Insights detailed result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-detail-phpinsights
+          path: phpinsights-results.txt
+          if-no-files-found: warn
+          retention-days: 30
+
+
+
+
+  ci-report:
+    name: Create CI JSON Report
+    if: ${{ always() }}
+
+    needs:
+      - phpunit
+      - composer-audit
+      - semgrep
+      - static-analysis
+      - code-quality
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Download detailed test results
+        continue-on-error: true
+        uses: actions/download-artifact@v5
+        with:
+          pattern: ci-detail-*
+          path: detailed-results
+          merge-multiple: true
+
+      - name: Ensure every result file exists
         shell: bash
         run: |
-          python3 - <<'PY'
-          import json
-          import os
-          from pathlib import Path
+          mkdir -p detailed-results
 
-          raw_path = Path("composer-audit.json")
-          stderr_path = Path("composer-audit.stderr.txt")
+          ensure_report() {
+            file="$1"
+            tool="$2"
 
-          summary = {
-              "total": 0,
-              "critical": 0,
-              "high": 0,
-              "medium": 0,
-              "low": 0,
-              "unknown": 0,
-              "affected_packages": 0,
-              "abandoned_packages": 0,
-          }
-          findings = []
-          error = None
-
-          if os.environ.get("APPLICABLE") != "true":
-              status = "skipped"
-              error = os.environ.get("SKIP_REASON") or "Composer audit is not applicable"
-              raw = {}
-          else:
-              try:
-                  raw = json.loads(raw_path.read_text(encoding="utf-8"))
-              except Exception as exc:
-                  raw = {}
-                  status = "failed"
-                  error = f"Could not parse Composer audit JSON: {exc}"
-              else:
-                  status = "completed"
-                  advisories = raw.get("advisories", {})
-                  abandoned = raw.get("abandoned", {})
-
-                  if not isinstance(advisories, dict):
-                      advisories = {}
-                  if not isinstance(abandoned, dict):
-                      abandoned = {}
-
-                  summary["affected_packages"] = len(advisories)
-                  summary["abandoned_packages"] = len(abandoned)
-
-                  for package_name, package_advisories in advisories.items():
-                      if not isinstance(package_advisories, list):
-                          continue
-
-                      for advisory in package_advisories:
-                          if not isinstance(advisory, dict):
-                              continue
-
-                          severity = str(advisory.get("severity") or "unknown").lower()
-                          if severity == "moderate":
-                              severity = "medium"
-                          if severity not in {"critical", "high", "medium", "low"}:
-                              severity = "unknown"
-
-                          summary[severity] += 1
-                          summary["total"] += 1
-
-                          findings.append({
-                              "package": package_name,
-                              "severity": severity,
-                              "advisory_id": advisory.get("advisoryId"),
-                              "cve": advisory.get("cve"),
-                              "title": advisory.get("title"),
-                              "affected_versions": advisory.get("affectedVersions"),
-                              "link": advisory.get("link"),
-                              "reported_at": advisory.get("reportedAt"),
-                          })
-
-          stderr = None
-          if stderr_path.exists():
-              value = stderr_path.read_text(encoding="utf-8", errors="replace").strip()
-              stderr = value or None
-
-          result = {
-              "schema_version": 1,
-              "scan_id": os.environ["SCAN_ID"],
-              "scanner": "composer-audit",
-              "repository": os.environ["GITHUB_REPOSITORY"],
-              "commit_sha": os.environ["GITHUB_SHA"],
-              "status": status,
-              "tool_exit_code": int(os.environ.get("AUDIT_EXIT_CODE") or 0),
-              "summary": summary,
-              "findings": findings,
-              "error": error,
-              "stderr": stderr,
+            if [ ! -f "$file" ]; then
+              echo "No detailed output was generated by $tool." > "$file"
+              echo "The job may have failed before the scan command started." >> "$file"
+            fi
           }
 
-          Path("scan-result.json").write_text(
-              json.dumps(result, indent=2),
-              encoding="utf-8",
-          )
-          PY
+          ensure_report \
+            detailed-results/phpunit-results.txt \
+            "PHPUnit"
 
-      - name: Upload scan result
+          ensure_report \
+            detailed-results/composer-audit.txt \
+            "Composer Audit"
+
+          ensure_report \
+            detailed-results/semgrep-results.txt \
+            "Semgrep"
+
+          ensure_report \
+            detailed-results/larastan-results.txt \
+            "Larastan"
+
+          ensure_report \
+            detailed-results/phpinsights-results.txt \
+            "PHP Insights"
+
+      - name: Create JSON report
+        env:
+          PHPUNIT_JOB_RESULT: ${{ needs.phpunit.result }}
+          PHPUNIT_CHECK_RESULT: ${{ needs.phpunit.outputs.check_result }}
+
+          COMPOSER_JOB_RESULT: ${{ needs.composer-audit.result }}
+          COMPOSER_CHECK_RESULT: ${{ needs.composer-audit.outputs.check_result }}
+
+          SEMGREP_JOB_RESULT: ${{ needs.semgrep.result }}
+          SEMGREP_CHECK_RESULT: ${{ needs.semgrep.outputs.check_result }}
+
+          LARASTAN_JOB_RESULT: ${{ needs.static-analysis.result }}
+          LARASTAN_CHECK_RESULT: ${{ needs.static-analysis.outputs.check_result }}
+
+          CODE_QUALITY_JOB_RESULT: ${{ needs.code-quality.result }}
+          CODE_QUALITY_CHECK_RESULT: ${{ needs.code-quality.outputs.check_result }}
+
+          SCAN_ID: ${{ inputs.scan_id || '' }}
+          REPOSITORY: ${{ github.repository }}
+          WORKFLOW_NAME: ${{ github.workflow }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          COMMIT_SHA: ${{ inputs.commit_sha || github.sha }}
+          PR_HEAD_SHA: ${{ inputs.commit_sha || '' }}
+          PR_NUMBER: ${{ inputs.pr_number || '' }}
+          SERVER_URL: ${{ github.server_url }}
+
+        run: |
+          CREATED_AT="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          RUN_URL="${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}"
+
+          jq -n \
+            --arg schema_version "1" \
+            --arg scan_id "$SCAN_ID" \
+            --arg repository "$REPOSITORY" \
+            --arg workflow "$WORKFLOW_NAME" \
+            --arg run_id "$RUN_ID" \
+            --arg run_attempt "$RUN_ATTEMPT" \
+            --arg run_url "$RUN_URL" \
+            --arg event "$EVENT_NAME" \
+            --arg ref "$REF_NAME" \
+            --arg commit_sha "$COMMIT_SHA" \
+            --arg pr_head_sha "$PR_HEAD_SHA" \
+            --arg pr_number "$PR_NUMBER" \
+            --arg created_at "$CREATED_AT" \
+            --arg phpunit_job "$PHPUNIT_JOB_RESULT" \
+            --arg phpunit_check "$PHPUNIT_CHECK_RESULT" \
+            --arg composer_job "$COMPOSER_JOB_RESULT" \
+            --arg composer_check "$COMPOSER_CHECK_RESULT" \
+            --arg semgrep_job "$SEMGREP_JOB_RESULT" \
+            --arg semgrep_check "$SEMGREP_CHECK_RESULT" \
+            --arg larastan_job "$LARASTAN_JOB_RESULT" \
+            --arg larastan_check "$LARASTAN_CHECK_RESULT" \
+            --arg code_quality_job "$CODE_QUALITY_JOB_RESULT" \
+            --arg code_quality_check "$CODE_QUALITY_CHECK_RESULT" \
+            --rawfile phpunit_details \
+              detailed-results/phpunit-results.txt \
+            --rawfile composer_details \
+              detailed-results/composer-audit.txt \
+            --rawfile semgrep_details \
+              detailed-results/semgrep-results.txt \
+            --rawfile larastan_details \
+              detailed-results/larastan-results.txt \
+            --rawfile code_quality_details \
+              detailed-results/phpinsights-results.txt \
+            '
+            def optional_status($value):
+              if $value == "" then null else $value end;
+
+            def optional_number($value):
+              if $value == "" then null else ($value | tonumber) end;
+
+            {
+              schema_version: ($schema_version | tonumber),
+              scan_id: optional_status($scan_id),
+              repository: $repository,
+              workflow: $workflow,
+              run_id: ($run_id | tonumber),
+              run_attempt: ($run_attempt | tonumber),
+              run_url: $run_url,
+              event: $event,
+              ref: $ref,
+              commit_sha: $commit_sha,
+              pull_request: {
+                number: optional_number($pr_number),
+                head_sha: (
+                  if $pr_head_sha == "" then null else $pr_head_sha end
+                )
+              },
+              created_at: $created_at,
+              policy: {
+                explicit_merge_gate_enabled: false,
+                slack_notification_enabled: false,
+                zap_in_this_workflow: false
+              },
+              jobs: {
+                phpunit: {
+                  job_result: $phpunit_job,
+                  check_result: optional_status($phpunit_check),
+                  details: $phpunit_details
+                },
+                composer_audit: {
+                  job_result: $composer_job,
+                  check_result: optional_status($composer_check),
+                  details: $composer_details
+                },
+                semgrep: {
+                  job_result: $semgrep_job,
+                  check_result: optional_status($semgrep_check),
+                  details: $semgrep_details
+                },
+                static_analysis: {
+                  job_result: $larastan_job,
+                  check_result: optional_status($larastan_check),
+                  details: $larastan_details
+                },
+                code_quality: {
+                  job_result: $code_quality_job,
+                  check_result: optional_status($code_quality_check),
+                  details: $code_quality_details
+                }
+              }
+            }
+            ' > ci-security-report.json
+
+      - name: Validate JSON report
+        run: jq empty ci-security-report.json
+
+      - name: Upload complete CI security report
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
-          name: composer-scan-${{ inputs.scan_id || github.run_id }}
+          name: ci-security-report
           path: |
-            scan-result.json
-            composer-audit.json
-            composer-audit.stderr.txt
-          if-no-files-found: warn
-          retention-days: 7
+            ci-security-report.json
+            detailed-results/
+          if-no-files-found: error
+          retention-days: 30
+          overwrite: true
