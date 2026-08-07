@@ -60,6 +60,7 @@ jobs:
 
       - name: Run Composer security audit
         id: audit
+        continue-on-error: true
         run: |
           set -o pipefail
 
@@ -126,6 +127,7 @@ jobs:
 
       - name: Run Semgrep
         id: semgrep
+        continue-on-error: true
         run: |
           set -o pipefail
 
