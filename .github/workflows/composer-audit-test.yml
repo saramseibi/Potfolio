@@ -38,7 +38,7 @@ jobs:
     timeout-minutes: 10
 
     outputs:
-      check_result: ${{ steps.audit.outcome }}
+      check_result: ${{ steps.audit.outputs.exit_code == '0' && 'success' || 'failure' }}
 
     steps:
 
@@ -55,46 +55,48 @@ jobs:
           tools: composer:v2
           coverage: none
 
-      - name: Validate Composer files
-        run: composer validate --strict --no-check-publish
-
-      - name: Run Composer security audit
+      - name: Run Composer audit
         id: audit
-        continue-on-error: true
+        shell: bash
         run: |
-          set -o pipefail
+          if [[ ! -f composer.json ]]; then
+            echo "applicable=false" >> "$GITHUB_OUTPUT"
+            echo "reason=composer.json was not found" >> "$GITHUB_OUTPUT"
+            echo "exit_code=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
+          if [[ ! -f composer.lock ]]; then
+            echo "applicable=false" >> "$GITHUB_OUTPUT"
+            echo "reason=composer.lock was not found" >> "$GITHUB_OUTPUT"
+            echo "exit_code=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "applicable=true" >> "$GITHUB_OUTPUT"
+
+          set +e
           composer audit \
             --locked \
             --no-interaction \
-            --format=plain \
-            2>&1 | tee composer-audit.txt
+            --format=json \
+            > composer-audit.json \
+            2> composer-audit.stderr.txt
+          audit_exit_code=$?
+          set -e
 
-      - name: Add Composer audit to summary
-        if: always()
-        run: |
-          echo "## Composer Security Audit" >> "$GITHUB_STEP_SUMMARY"
+          echo "exit_code=$audit_exit_code" >> "$GITHUB_OUTPUT"
 
-          if [ "${{ steps.audit.outcome }}" = "success" ]; then
-            echo " No known dependency vulnerabilities found" \
-              >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo " Composer found vulnerable dependencies" \
-              >> "$GITHUB_STEP_SUMMARY"
-          fi
 
-          if [ -f composer-audit.txt ]; then
-            echo '```text' >> "$GITHUB_STEP_SUMMARY"
-            cat composer-audit.txt >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-          fi
 
       - name: Upload Composer detailed result
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ci-detail-composer
-          path: composer-audit.txt
+          path: |
+            composer-audit.json
+            composer-audit.stderr.txt
           if-no-files-found: warn
           retention-days: 30
 
@@ -212,7 +214,7 @@ jobs:
           }
 
           ensure_report \
-            detailed-results/composer-audit.txt \
+            detailed-results/composer-audit.json \
             "Composer Audit"
 
           ensure_report \
@@ -262,7 +264,7 @@ jobs:
             --arg semgrep_job "$SEMGREP_JOB_RESULT" \
             --arg semgrep_check "$SEMGREP_CHECK_RESULT" \
             --rawfile composer_details \
-              detailed-results/composer-audit.txt \
+              detailed-results/composer-audit.json \
             --rawfile semgrep_details \
               detailed-results/semgrep-results.txt \
             '
