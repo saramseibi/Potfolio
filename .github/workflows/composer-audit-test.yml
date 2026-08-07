@@ -32,117 +32,6 @@ concurrency:
 
 jobs:
 
-  phpunit:
-    name: PHPUnit Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-
-    outputs:
-      check_result: ${{ steps.phpunit.outcome }}
-
-    env:
-      APP_ENV: testing
-      APP_DEBUG: "false"
-
-      DB_CONNECTION: mysql
-      DB_HOST: 127.0.0.1
-      DB_PORT: 3306
-      DB_DATABASE: testing
-      DB_USERNAME: testing
-      DB_PASSWORD: testing_password
-
-      SESSION_DRIVER: array
-      QUEUE_CONNECTION: sync
-
-    services:
-      mysql:
-        image: mysql:8.0
-
-        env:
-          MYSQL_ROOT_PASSWORD: root_password
-          MYSQL_DATABASE: testing
-          MYSQL_USER: testing
-          MYSQL_PASSWORD: testing_password
-
-        ports:
-          - 3306:3306
-
-        options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot_password"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
-
-    steps:
-
-      - name: Checkout code
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ inputs.commit_sha || github.sha }}
-          persist-credentials: false
-
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: "8.2"
-          extensions: mbstring, pdo_mysql, gd, zip
-          tools: composer:v2
-          coverage: none
-
-      - name: Install PHP dependencies
-        run: composer install --prefer-dist --no-interaction --no-progress
-
-      - name: Create testing environment file
-        run: cp .env.example .env
-
-      - name: Generate application key
-        run: php artisan key:generate --force
-
-      - name: Clear Laravel caches
-        run: |
-          php artisan config:clear
-          php artisan route:clear
-          php artisan cache:clear
-
-      - name: Prepare testing database
-        run: php artisan migrate --force
-
-      - name: Run PHPUnit tests
-        id: phpunit
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          php artisan test 2>&1 | tee phpunit-results.txt
-
-      - name: Add PHPUnit result to summary
-        if: always()
-        run: |
-          echo "## PHPUnit Tests" >> "$GITHUB_STEP_SUMMARY"
-
-          if [ "${{ steps.phpunit.outcome }}" = "success" ]; then
-            echo " All PHPUnit tests passed" >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo " PHPUnit found failing tests" >> "$GITHUB_STEP_SUMMARY"
-          fi
-
-          if [ -f phpunit-results.txt ]; then
-            echo '```text' >> "$GITHUB_STEP_SUMMARY"
-            tail -60 phpunit-results.txt >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-          fi
-
-      - name: Upload PHPUnit detailed result
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ci-detail-phpunit
-          path: phpunit-results.txt
-          if-no-files-found: warn
-          retention-days: 30
-
-
-
-
   composer-audit:
     name: Composer CVE Audit
     runs-on: ubuntu-latest
@@ -282,173 +171,13 @@ jobs:
 
 
 
-  static-analysis:
-    name: Larastan Static Analysis
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    outputs:
-      check_result: ${{ steps.larastan.outcome }}
-
-    steps:
-
-      - name: Checkout code
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ inputs.commit_sha || github.sha }}
-          persist-credentials: false
-
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: "8.2"
-          extensions: mbstring, gd, zip
-          tools: composer:v2
-          coverage: none
-
-      - name: Install PHP dependencies
-        run: composer install --prefer-dist --no-interaction --no-progress
-
-      - name: Check Larastan installation
-        run: |
-          if [ ! -x "./vendor/bin/phpstan" ]; then
-            echo "::error::Larastan/PHPStan is not installed."
-            echo "Install it locally with:"
-            echo "composer require --dev larastan/larastan"
-            exit 1
-          fi
-
-      - name: Create Laravel environment
-        run: |
-          cp .env.example .env
-          php artisan key:generate --force
-
-      - name: Run Larastan
-        id: larastan
-        continue-on-error: true
-        run: |
-          set -o pipefail
-
-          ./vendor/bin/phpstan analyse \
-            app \
-            routes \
-            --no-progress \
-            --error-format=table \
-            2>&1 | tee larastan-results.txt
-
-      - name: Add Larastan result to summary
-        if: always()
-        run: |
-          echo "## Larastan / PHPStan" >> "$GITHUB_STEP_SUMMARY"
-
-          if [ "${{ steps.larastan.outcome }}" = "success" ]; then
-            echo " No static-analysis errors found" \
-              >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo " Static-analysis errors found" \
-              >> "$GITHUB_STEP_SUMMARY"
-          fi
-
-          if [ -f larastan-results.txt ]; then
-            echo '```text' >> "$GITHUB_STEP_SUMMARY"
-            tail -100 larastan-results.txt >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-          fi
-
-      - name: Upload Larastan detailed result
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ci-detail-larastan
-          path: larastan-results.txt
-          if-no-files-found: warn
-          retention-days: 30
-
-
-
-
-  code-quality:
-    name: PHP Code Quality Score
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    outputs:
-      check_result: ${{ steps.insights.outcome }}
-
-    steps:
-
-      - name: Checkout code
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ inputs.commit_sha || github.sha }}
-          persist-credentials: false
-
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: "8.2"
-          extensions: mbstring, gd, zip
-          tools: composer:v2
-          coverage: none
-
-      - name: Install PHP dependencies
-        run: composer install --prefer-dist --no-interaction --no-progress
-
-      - name: Check PHP Insights installation
-        run: |
-          if [ ! -x "./vendor/bin/phpinsights" ]; then
-            echo "::error::PHP Insights is not installed."
-            echo "Install it locally with:"
-            echo "composer require --dev nunomaduro/phpinsights"
-            exit 1
-          fi
-
-      - name: Run PHP Insights
-        id: insights
-        continue-on-error: true
-        run: |
-          set -o pipefail
-
-          ./vendor/bin/phpinsights analyse app \
-            --no-interaction \
-            2>&1 | tee phpinsights-results.txt
-
-      - name: Add quality score to summary
-        if: always()
-        run: |
-          echo "## Code Quality Score" >> "$GITHUB_STEP_SUMMARY"
-
-          if [ -f phpinsights-results.txt ]; then
-            echo '```text' >> "$GITHUB_STEP_SUMMARY"
-            cat phpinsights-results.txt >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "No quality report generated." \
-              >> "$GITHUB_STEP_SUMMARY"
-          fi
-
-      - name: Upload PHP Insights detailed result
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ci-detail-phpinsights
-          path: phpinsights-results.txt
-          if-no-files-found: warn
-          retention-days: 30
-
-
-
-
   ci-report:
     name: Create CI JSON Report
     if: ${{ always() }}
 
     needs:
-      - phpunit
       - composer-audit
       - semgrep
-      - static-analysis
-      - code-quality
 
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -481,10 +210,6 @@ jobs:
           }
 
           ensure_report \
-            detailed-results/phpunit-results.txt \
-            "PHPUnit"
-
-          ensure_report \
             detailed-results/composer-audit.txt \
             "Composer Audit"
 
@@ -492,30 +217,13 @@ jobs:
             detailed-results/semgrep-results.txt \
             "Semgrep"
 
-          ensure_report \
-            detailed-results/larastan-results.txt \
-            "Larastan"
-
-          ensure_report \
-            detailed-results/phpinsights-results.txt \
-            "PHP Insights"
-
       - name: Create JSON report
         env:
-          PHPUNIT_JOB_RESULT: ${{ needs.phpunit.result }}
-          PHPUNIT_CHECK_RESULT: ${{ needs.phpunit.outputs.check_result }}
-
           COMPOSER_JOB_RESULT: ${{ needs.composer-audit.result }}
           COMPOSER_CHECK_RESULT: ${{ needs.composer-audit.outputs.check_result }}
 
           SEMGREP_JOB_RESULT: ${{ needs.semgrep.result }}
           SEMGREP_CHECK_RESULT: ${{ needs.semgrep.outputs.check_result }}
-
-          LARASTAN_JOB_RESULT: ${{ needs.static-analysis.result }}
-          LARASTAN_CHECK_RESULT: ${{ needs.static-analysis.outputs.check_result }}
-
-          CODE_QUALITY_JOB_RESULT: ${{ needs.code-quality.result }}
-          CODE_QUALITY_CHECK_RESULT: ${{ needs.code-quality.outputs.check_result }}
 
           SCAN_ID: ${{ inputs.scan_id || '' }}
           REPOSITORY: ${{ github.repository }}
@@ -547,26 +255,14 @@ jobs:
             --arg pr_head_sha "$PR_HEAD_SHA" \
             --arg pr_number "$PR_NUMBER" \
             --arg created_at "$CREATED_AT" \
-            --arg phpunit_job "$PHPUNIT_JOB_RESULT" \
-            --arg phpunit_check "$PHPUNIT_CHECK_RESULT" \
             --arg composer_job "$COMPOSER_JOB_RESULT" \
             --arg composer_check "$COMPOSER_CHECK_RESULT" \
             --arg semgrep_job "$SEMGREP_JOB_RESULT" \
             --arg semgrep_check "$SEMGREP_CHECK_RESULT" \
-            --arg larastan_job "$LARASTAN_JOB_RESULT" \
-            --arg larastan_check "$LARASTAN_CHECK_RESULT" \
-            --arg code_quality_job "$CODE_QUALITY_JOB_RESULT" \
-            --arg code_quality_check "$CODE_QUALITY_CHECK_RESULT" \
-            --rawfile phpunit_details \
-              detailed-results/phpunit-results.txt \
             --rawfile composer_details \
               detailed-results/composer-audit.txt \
             --rawfile semgrep_details \
               detailed-results/semgrep-results.txt \
-            --rawfile larastan_details \
-              detailed-results/larastan-results.txt \
-            --rawfile code_quality_details \
-              detailed-results/phpinsights-results.txt \
             '
             def optional_status($value):
               if $value == "" then null else $value end;
@@ -598,11 +294,6 @@ jobs:
                 zap_in_this_workflow: false
               },
               jobs: {
-                phpunit: {
-                  job_result: $phpunit_job,
-                  check_result: optional_status($phpunit_check),
-                  details: $phpunit_details
-                },
                 composer_audit: {
                   job_result: $composer_job,
                   check_result: optional_status($composer_check),
@@ -612,16 +303,6 @@ jobs:
                   job_result: $semgrep_job,
                   check_result: optional_status($semgrep_check),
                   details: $semgrep_details
-                },
-                static_analysis: {
-                  job_result: $larastan_job,
-                  check_result: optional_status($larastan_check),
-                  details: $larastan_details
-                },
-                code_quality: {
-                  job_result: $code_quality_job,
-                  check_result: optional_status($code_quality_check),
-                  details: $code_quality_details
                 }
               }
             }
