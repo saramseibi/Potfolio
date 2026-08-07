@@ -209,6 +209,174 @@ jobs:
 
 
 
+  npm-audit:
+    name: NPM CVE Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    outputs:
+      check_result: ${{ steps.audit.outputs.exit_code == '0' && 'success' || 'failure' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.commit_sha || github.sha }}
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run npm audit
+        id: audit
+        shell: bash
+        run: |
+          if [[ ! -f package-lock.json ]]; then
+            echo "applicable=false" >> "$GITHUB_OUTPUT"
+            echo "reason=package-lock.json was not found" >> "$GITHUB_OUTPUT"
+            echo "exit_code=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "applicable=true" >> "$GITHUB_OUTPUT"
+
+          set +e
+          npm audit --audit-level=high --json > npm-audit.json 2> npm-audit.stderr.txt
+          audit_exit_code=$?
+          set -e
+
+          echo "exit_code=$audit_exit_code" >> "$GITHUB_OUTPUT"
+
+      - name: Build scan-result.json
+        if: always()
+        env:
+          SCAN_ID: ${{ inputs.scan_id || github.run_id }}
+          APPLICABLE: ${{ steps.audit.outputs.applicable }}
+          SKIP_REASON: ${{ steps.audit.outputs.reason }}
+          AUDIT_EXIT_CODE: ${{ steps.audit.outputs.exit_code }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          raw_path = Path("npm-audit.json")
+          stderr_path = Path("npm-audit.stderr.txt")
+
+          summary = {
+              "total": 0,
+              "critical": 0,
+              "high": 0,
+              "medium": 0,
+              "low": 0,
+              "info": 0,
+              "affected_packages": 0,
+          }
+          findings = []
+          error = None
+
+          if os.environ.get("APPLICABLE") != "true":
+              status = "skipped"
+              error = os.environ.get("SKIP_REASON") or "npm audit is not applicable"
+              raw = {}
+          else:
+              try:
+                  raw = json.loads(raw_path.read_text(encoding="utf-8"))
+              except Exception as exc:
+                  raw = {}
+                  status = "failed"
+                  error = f"Could not parse npm audit JSON: {exc}"
+              else:
+                  status = "completed"
+                  vulnerabilities = raw.get("vulnerabilities", {})
+                  if not isinstance(vulnerabilities, dict):
+                      vulnerabilities = {}
+
+                  summary["affected_packages"] = len(vulnerabilities)
+
+                  for package_name, vuln in vulnerabilities.items():
+                      if not isinstance(vuln, dict):
+                          continue
+
+                      top_severity = str(vuln.get("severity") or "info").lower()
+                      range_ = vuln.get("range")
+                      fix_available = vuln.get("fixAvailable")
+                      fix_version = (
+                          fix_available.get("version")
+                          if isinstance(fix_available, dict)
+                          else None
+                      )
+
+                      advisories = [v for v in (vuln.get("via") or []) if isinstance(v, dict)]
+                      if not advisories:
+                          advisories = [{"title": None, "severity": top_severity, "url": None}]
+
+                      for advisory in advisories:
+                          severity = str(advisory.get("severity") or top_severity or "info").lower()
+                          if severity == "moderate":
+                              severity = "medium"
+                          if severity not in {"critical", "high", "medium", "low", "info"}:
+                              severity = "info"
+
+                          cwe = advisory.get("cwe")
+                          if isinstance(cwe, list):
+                              cwe = cwe[0] if cwe else None
+
+                          summary[severity] += 1
+                          summary["total"] += 1
+
+                          findings.append({
+                              "package": package_name,
+                              "severity": severity,
+                              "title": advisory.get("title") or f"Vulnerable dependency: {package_name}",
+                              "url": advisory.get("url"),
+                              "cwe": cwe,
+                              "range": advisory.get("range") or range_,
+                              "fix_version": fix_version,
+                          })
+
+          stderr = None
+          if stderr_path.exists():
+              value = stderr_path.read_text(encoding="utf-8", errors="replace").strip()
+              stderr = value or None
+
+          result = {
+              "schema_version": 1,
+              "scan_id": os.environ["SCAN_ID"],
+              "scanner": "npm-audit",
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "commit_sha": os.environ["GITHUB_SHA"],
+              "status": status,
+              "tool_exit_code": int(os.environ.get("AUDIT_EXIT_CODE") or 0),
+              "summary": summary,
+              "findings": findings,
+              "error": error,
+              "stderr": stderr,
+          }
+
+          Path("scan-result.json").write_text(
+              json.dumps(result, indent=2),
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Upload NPM detailed result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-detail-npm
+          path: |
+            scan-result.json
+            npm-audit.json
+            npm-audit.stderr.txt
+          if-no-files-found: warn
+          retention-days: 30
+
+
+
+
   semgrep:
     name: Semgrep Security Scan
     runs-on: ubuntu-latest
@@ -383,6 +551,7 @@ jobs:
 
     needs:
       - composer-audit
+      - npm-audit
       - semgrep
 
     runs-on: ubuntu-latest
@@ -420,6 +589,10 @@ jobs:
             "Composer Audit"
 
           ensure_report \
+            detailed-results/npm-audit.json \
+            "NPM Audit"
+
+          ensure_report \
             detailed-results/semgrep-results.txt \
             "Semgrep"
 
@@ -427,6 +600,9 @@ jobs:
         env:
           COMPOSER_JOB_RESULT: ${{ needs.composer-audit.result }}
           COMPOSER_CHECK_RESULT: ${{ needs.composer-audit.outputs.check_result }}
+
+          NPM_JOB_RESULT: ${{ needs.npm-audit.result }}
+          NPM_CHECK_RESULT: ${{ needs.npm-audit.outputs.check_result }}
 
           SEMGREP_JOB_RESULT: ${{ needs.semgrep.result }}
           SEMGREP_CHECK_RESULT: ${{ needs.semgrep.outputs.check_result }}
@@ -463,10 +639,14 @@ jobs:
             --arg created_at "$CREATED_AT" \
             --arg composer_job "$COMPOSER_JOB_RESULT" \
             --arg composer_check "$COMPOSER_CHECK_RESULT" \
+            --arg npm_job "$NPM_JOB_RESULT" \
+            --arg npm_check "$NPM_CHECK_RESULT" \
             --arg semgrep_job "$SEMGREP_JOB_RESULT" \
             --arg semgrep_check "$SEMGREP_CHECK_RESULT" \
             --rawfile composer_details \
               detailed-results/composer-audit.json \
+            --rawfile npm_details \
+              detailed-results/npm-audit.json \
             --rawfile semgrep_details \
               detailed-results/semgrep-results.txt \
             '
@@ -504,6 +684,11 @@ jobs:
                   job_result: $composer_job,
                   check_result: optional_status($composer_check),
                   details: $composer_details
+                },
+                npm_audit: {
+                  job_result: $npm_job,
+                  check_result: optional_status($npm_check),
+                  details: $npm_details
                 },
                 semgrep: {
                   job_result: $semgrep_job,
