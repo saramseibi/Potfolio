@@ -6,12 +6,28 @@ on:
   workflow_dispatch:
     inputs:
       scan_id:
-        description: Scan ID from the DevSecOps dashboard
+        description: Scan ID assigned by the DevSecOps backend
         required: true
+        type: string
+      trigger:
+        description: What triggered this scan (pr, push, manual, schedule)
+        required: false
+        type: string
+      commit_sha:
+        description: Commit SHA being scanned
+        required: false
+        type: string
+      pr_number:
+        description: Pull request number, if applicable
+        required: false
         type: string
 
 permissions:
   contents: read
+
+concurrency:
+  group: security-${{ inputs.pr_number || inputs.scan_id }}
+  cancel-in-progress: true
 
 jobs:
   composer-audit:
