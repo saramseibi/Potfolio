@@ -1,11 +1,7 @@
 name: OWASP ZAP Active Scan
 
 on:
-  workflow_dispatch:
-    inputs:
-      scan_id:    { required: false }
-      trigger:    { required: false }
-      commit_sha: { required: false }
+
 
 permissions:
   contents: read
